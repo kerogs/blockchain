@@ -1,0 +1,4 @@
+BLOCKCHAIN_VERSION = "1.1.1-beta"
+API_VERSION = "1.1.1-beta"
+CRYPTO_NAME = "KerogsCoin"
+CRYPTO_SYMBOL = "KSC"
