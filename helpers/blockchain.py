@@ -4,6 +4,7 @@ from colorama import init, Fore
 import json
 import os
 import random
+from helpers.info import *
 
 # Initialize colorama
 init(autoreset=True)
@@ -148,21 +149,30 @@ class Blockchain:
         total_required = transaction.amount + gas_fee
 
         if sender_balance < total_required:
-            print(f"{Fore.RED}[-] Transaction rejected: insufficient funds for {transaction.sender} ({sender_balance} KSC)")
-            return False
+            print(f"{Fore.RED}[-] Transaction rejected: insufficient funds for {transaction.sender} ({sender_balance} {CRYPTO_SYMBOL})")
+            return {
+                "status":"KO",
+                "message":"Transaction rejected: insufficient funds for {transaction.sender} ({sender_balance} {CRYPTO_SYMBOL})"
+            }
 
         self.accounts[transaction.sender] -= total_required
         self.pending_transactions.append(transaction)
         print(f"{Fore.GREEN}[+] Transaction added: {transaction}")
-        return True
+        return {
+            "status": "OK",
+            "message": "Transaction added: {transaction}"
+        }
 
     def get_balance(self, address):
         return self.accounts.get(address, 0)
 
     def mine_pending_transactions(self, miner_address):
         if self.total_supply + self.reward > self.max_supply:
-            print(f"{Fore.RED}[-] Mining reward exceeds maximum supply of KSC!")
-            return False
+            print(f"{Fore.RED}[-] Mining reward exceeds maximum supply of {CRYPTO_SYMBOL}!")
+            return {
+                "status":"KO",
+                "message":"{Fore.RED}[-] Mining reward exceeds maximum supply of {CRYPTO_SYMBOL}!"
+            }
 
         self.pending_transactions.append(Transaction("System", miner_address, self.reward))
         
@@ -182,7 +192,10 @@ class Blockchain:
         self.total_supply += self.reward
         self.pending_transactions = []
         print(f"{Fore.GREEN}[+] Block mined successfully: {new_block}")
-        return True
+        return {
+            "status":"OK",
+            "message":"Block mined successfully: {new_block}"
+        }
 
     def save_state(self):
         """Sauvegarder l'état de la blockchain."""
@@ -194,7 +207,14 @@ class Blockchain:
         }
         with open(self.state_file, "w") as file:
             json.dump(state, file, indent=4)
-        print("[!] State saved.")
+            print("[!] State saved.")
+            return {
+                "status":"OK",
+                "ksc_to_eur_rate": self.ksc_to_eur_rate,
+                "accounts": self.accounts,
+                "chain": [block.to_dict() for block in self.chain],
+                "pending_transactions": [tx.to_dict() for tx in self.pending_transactions]
+            }
 
     def load_state(self):
         """Charger l'état de la blockchain depuis un fichier JSON."""

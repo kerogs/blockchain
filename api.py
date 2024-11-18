@@ -5,9 +5,17 @@ from helpers.blockchain import *
 from helpers.info import * 
 
 
+# === FastAPI ===
 app = FastAPI()
 
+# === Init blockchain ===
+blockchain = Blockchain(max_supply=200, initial_balance=200,gas_fee=0.01)
+
 # === API endpoints ===
+
+@app.get("/", summary="get if the api is running")
+async def root() -> dict:
+    return {"status": "API is running"}
 
 @app.get("/info", summary="Get general information about blockchain and the API")
 async def info() -> dict:
@@ -29,6 +37,8 @@ async def info() -> dict:
         crypto_value = contents.get("ksc_to_eur_rate", "Not available, no blockchain data found.") 
 
     return {
+        "status": "API is running",
+        "github_version": "1.1.2-beta", 
         "github_repo": "https://github.com/kerogs/blockchain",
         "blockchain": {
             "version": BLOCKCHAIN_VERSION,
@@ -91,3 +101,26 @@ async def get_blockchain_info() -> dict:
         "blockchain_exist": True,
         "attributes": contents,
     }
+    
+@app.post("/blockchain/give/{admin_key}/{address}/{amount}", summary="Give crypto to an address")
+def give_money(admin_key: str, address: str, amount: float) -> dict:
+    # give crypto to an address
+    if admin_key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="Forbidden. Invalid admin key.")
+    
+    r = blockchain.add_transaction(Transaction("kerogscoinminer", address, amount))
+    
+    r2 = blockchain.save_state()
+    
+    r3 = blockchain.mine_pending_transactions("kerogscoinminer")
+
+    return {
+        "transaction": r,
+        "data": r2,
+        "mine": r3,
+        "attributes": {
+            "to":address,
+            "amount":amount
+        }
+    }
+    
